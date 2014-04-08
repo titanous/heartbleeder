@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"flag"
 	"strings"
 	"time"
 
@@ -11,11 +12,19 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Printf("Usage: %s host[:443]\n", os.Args[0])
-		os.Exit(2)
+        var timeout int
+        flag.IntVar(&timeout, "timeout", 10, "Timeout after sending heartbeat")
+
+	flag.Usage = func() {
+		fmt.Printf("Usage: %s [options] [host][:443]\n", os.Args[0])
+		fmt.Println("Options:")
+		flag.PrintDefaults()
 	}
-	host := os.Args[1]
+
+	flag.Parse()
+
+	host := flag.Args()[0]
+
 	if !strings.Contains(host, ":") {
 		host += ":443"
 	}
@@ -49,7 +58,7 @@ func main() {
 		}
 		fmt.Printf("SECURE - %s has heartbeat extension enabled but is not vulnerable\n", host)
 		fmt.Printf("This error happened while reading the response to the malformed heartbeat (almost certainly a good thing): %q\n", err)
-	case <-time.After(10 * time.Second):
+	case <-time.After(time.Duration(timeout) * time.Second):
 		fmt.Printf("SECURE - %s has the heartbeat extension enabled, but timed out after a malformed heartbeat (this likely means that it is not vulnerable)\n", host)
 	}
 }
