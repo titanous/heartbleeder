@@ -29,7 +29,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	err = c.WriteHeartbeat(32, nil)
+	err = c.WriteHeartbeat(1, nil)
 	if err == tls.ErrNoHeartbeat {
 		fmt.Printf("SECURE - %s does not have the heartbeat extension enabled\n", host)
 		os.Exit(0)
