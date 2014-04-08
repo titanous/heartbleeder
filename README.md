@@ -21,6 +21,8 @@ Build from source by running `go get github.com/titanous/heartbleeder`, which
 will put the code in `$GOPATH/src/github.com/titanous/heartbleeder` and a binary
 at `$GOPATH/bin/heartbleeder`.
 
+Requires Go version >= 1.2.
+
 ## Credits
 
 The TLS implementation was borrowed from the Go standard library.
