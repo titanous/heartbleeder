@@ -16,14 +16,14 @@ func main() {
         flag.IntVar(&timeout, "timeout", 10, "Timeout after sending heartbeat")
 
 	flag.Usage = func() {
-		fmt.Printf("Usage: %s [options] [host][:443]\n", os.Args[0])
+		fmt.Printf("Usage: %s [options] host[:443]\n", os.Args[0])
 		fmt.Println("Options:")
 		flag.PrintDefaults()
 	}
 
 	flag.Parse()
 
-	host := flag.Args()[0]
+	host := flag.Arg(0)
 
 	if !strings.Contains(host, ":") {
 		host += ":443"
