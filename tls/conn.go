@@ -908,7 +908,7 @@ func (c *Conn) Heartbeat(length uint16, payload []byte) (int, []byte, error) {
 	c.out.Lock()
 	data := make([]byte, 3+len(payload)+16)
 	data[0] = 1 // heartbeat_request
-	data[1] = byte(length << 8)
+	data[1] = byte(length >> 8)
 	data[2] = byte(length)
 	copy(data[3:], payload)
 	_, err := c.writeRecord(recordTypeHeartbeat, data)
