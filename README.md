@@ -17,6 +17,10 @@ INSECURE - example.com:443 has the heartbeat extension enabled and is vulnerable
 Binaries are available on the [releases
 page](https://github.com/titanous/heartbleeder/releases).
 
+Build from source by running `go get github.com/titanous/heartbleeder`, which
+will put the code in `$GOPATH/src/github.com/titanous/heartbleeder` and a binary
+at `$GOPATH/bin/heartbleeder`.
+
 ## Credits
 
 The TLS implementation was borrowed from the Go standard library.
