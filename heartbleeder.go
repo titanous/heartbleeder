@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/titanous/heartbleeder/tls"
+	"./tls"
 )
 
 func main() {
