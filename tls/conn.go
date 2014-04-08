@@ -908,7 +908,7 @@ func (c *Conn) Heartbeat(length uint16, payload []byte) (int, []byte, error) {
 	c.out.Lock()
 	data := make([]byte, 3+len(payload)+16)
 	data[0] = 1 // heartbeat_request
-	data[1] = byte(length << 8)
+	data[1] = byte(length >> 8)
 	data[2] = byte(length)
 	copy(data[3:], payload)
 	_, err := c.writeRecord(recordTypeHeartbeat, data)
@@ -936,7 +936,7 @@ func (c *Conn) Heartbeat(length uint16, payload []byte) (int, []byte, error) {
 		return 0, nil, fmt.Errorf("tls: heartbeat expected type heartbeat_response (2), got %d", c.hb[0])
 	}
 
-	hbLen := int(c.hb[1]<<8) | int(c.hb[2])
+	hbLen := int(c.hb[1])*256 + int(c.hb[2])
 	res := make([]byte, len(c.hb)-3)
 	copy(res, c.hb[3:])
 	return hbLen, res, nil
