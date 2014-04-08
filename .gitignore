@@ -1,1 +1,5 @@
 heartbleeder
+bin
+src
+!src/heartbleeder
+pkg
