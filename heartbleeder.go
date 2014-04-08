@@ -12,8 +12,7 @@ import (
 )
 
 func main() {
-        var timeout int
-        flag.IntVar(&timeout, "timeout", 10, "Timeout after sending heartbeat")
+        var timeout = flag.Duration("timeout", 10*time.Second, "Timeout after sending heartbeat")
 
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [options] host[:443]\n", os.Args[0])
@@ -58,7 +57,7 @@ func main() {
 		}
 		fmt.Printf("SECURE - %s has heartbeat extension enabled but is not vulnerable\n", host)
 		fmt.Printf("This error happened while reading the response to the malformed heartbeat (almost certainly a good thing): %q\n", err)
-	case <-time.After(time.Duration(timeout) * time.Second):
+	case <-time.After(*timeout):
 		fmt.Printf("SECURE - %s has the heartbeat extension enabled, but timed out after a malformed heartbeat (this likely means that it is not vulnerable)\n", host)
 	}
 }
