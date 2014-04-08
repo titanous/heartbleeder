@@ -42,6 +42,7 @@ const (
 	recordTypeAlert            recordType = 21
 	recordTypeHandshake        recordType = 22
 	recordTypeApplicationData  recordType = 23
+	recordTypeHeartbeat        recordType = 24
 )
 
 // TLS handshake message types.
@@ -72,6 +73,7 @@ const (
 	extensionSupportedCurves     uint16 = 10
 	extensionSupportedPoints     uint16 = 11
 	extensionSignatureAlgorithms uint16 = 13
+	extensionHeartbeat           uint16 = 15
 	extensionSessionTicket       uint16 = 35
 	extensionNextProtoNeg        uint16 = 13172 // not IANA assigned
 	extensionRenegotiationInfo   uint16 = 0xff01

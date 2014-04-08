@@ -22,6 +22,7 @@ type clientHelloMsg struct {
 	sessionTicket       []uint8
 	signatureAndHashes  []signatureAndHash
 	secureRenegotiation bool
+	heartbeatSender     bool
 }
 
 func (m *clientHelloMsg) equal(i interface{}) bool {
@@ -83,6 +84,10 @@ func (m *clientHelloMsg) marshal() []byte {
 		numExtensions++
 	}
 	if m.secureRenegotiation {
+		extensionsLength += 1
+		numExtensions++
+	}
+	if m.heartbeatSender {
 		extensionsLength += 1
 		numExtensions++
 	}
@@ -235,6 +240,15 @@ func (m *clientHelloMsg) marshal() []byte {
 		z[1] = byte(extensionRenegotiationInfo & 0xff)
 		z[2] = 0
 		z[3] = 1
+		z = z[5:]
+	}
+	if m.heartbeatSender {
+		// http://tools.ietf.org/html/rfc6520
+		z[0] = byte(extensionHeartbeat >> 8)
+		z[1] = byte(extensionHeartbeat)
+		z[2] = 0
+		z[3] = 1
+		z[4] = 2 // peer_not_allowed_to_send
 		z = z[5:]
 	}
 
@@ -419,6 +433,7 @@ type serverHelloMsg struct {
 	ocspStapling        bool
 	ticketSupported     bool
 	secureRenegotiation bool
+	heartbeatReceiver   bool
 }
 
 func (m *serverHelloMsg) equal(i interface{}) bool {
@@ -612,6 +627,11 @@ func (m *serverHelloMsg) unmarshal(data []byte) bool {
 				return false
 			}
 			m.secureRenegotiation = true
+		case extensionHeartbeat:
+			if length != 1 {
+				return false
+			}
+			m.heartbeatReceiver = data[0] == 1 // peer_allowed_to_send
 		}
 		data = data[length:]
 	}
