@@ -11,6 +11,7 @@ import (
 	"crypto/cipher"
 	"crypto/subtle"
 	"crypto/x509"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -896,27 +897,25 @@ func (c *Conn) Write(b []byte) (int, error) {
 
 var ErrNoHeartbeat = errors.New("tls: server does not accept heartbeats")
 
-func (c *Conn) Heartbeat(length uint16, payload []byte) (int, []byte, error) {
+func (c *Conn) WriteHeartbeat(length uint16, payload []byte) error {
 	if err := c.Handshake(); err != nil {
-		return 0, nil, err
+		return err
 	}
-
 	if !c.serverAcceptsHeartbeats {
-		return 0, nil, ErrNoHeartbeat
+		return ErrNoHeartbeat
 	}
 
 	c.out.Lock()
-	data := make([]byte, 3+len(payload)+16)
+	defer c.out.Unlock()
+	data := make([]byte, 3+len(payload))
 	data[0] = 1 // heartbeat_request
-	data[1] = byte(length << 8)
-	data[2] = byte(length)
+	binary.BigEndian.PutUint16(data[1:], length)
 	copy(data[3:], payload)
 	_, err := c.writeRecord(recordTypeHeartbeat, data)
-	c.out.Unlock()
-	if err != nil {
-		return 0, nil, err
-	}
+	return err
+}
 
+func (c *Conn) ReadHeartbeat() (int, []byte, error) {
 	c.in.Lock()
 	defer c.in.Unlock()
 	for c.hb == nil && c.in.err == nil {
@@ -936,7 +935,7 @@ func (c *Conn) Heartbeat(length uint16, payload []byte) (int, []byte, error) {
 		return 0, nil, fmt.Errorf("tls: heartbeat expected type heartbeat_response (2), got %d", c.hb[0])
 	}
 
-	hbLen := int(c.hb[1]<<8) | int(c.hb[2])
+	hbLen := int(binary.BigEndian.Uint16(c.hb[1:]))
 	res := make([]byte, len(c.hb)-3)
 	copy(res, c.hb[3:])
 	return hbLen, res, nil
