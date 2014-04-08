@@ -1,10 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
-	"flag"
 	"strings"
 	"time"
 
@@ -12,18 +12,14 @@ import (
 )
 
 func main() {
-        var timeout = flag.Duration("timeout", 10*time.Second, "Timeout after sending heartbeat")
-
+	var timeout = flag.Duration("timeout", 10*time.Second, "Timeout after sending heartbeat")
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [options] host[:443]\n", os.Args[0])
 		fmt.Println("Options:")
 		flag.PrintDefaults()
 	}
-
 	flag.Parse()
-
 	host := flag.Arg(0)
-
 	if !strings.Contains(host, ":") {
 		host += ":443"
 	}
