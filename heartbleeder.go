@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	var timeout = flag.Duration("timeout", 10*time.Second, "Timeout after sending heartbeat")
+	timeout := flag.Duration("timeout", 5*time.Second, "Timeout after sending heartbeat")
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [options] host[:443]\n", os.Args[0])
 		fmt.Println("Options:")
