@@ -21,7 +21,9 @@ Build from source by running `go get github.com/titanous/heartbleeder`, which
 will put the code in `$GOPATH/src/github.com/titanous/heartbleeder` and a binary
 at `$GOPATH/bin/heartbleeder`.
 
-Requires Go version >= 1.2.
+Requires Go version >= 1.2. On Ubuntu
+[godeb](http://blog.labix.org/2013/06/15/in-flight-deb-packages-of-go) is an
+easy way of getting the latest version of Go.
 
 ## Credits
 
