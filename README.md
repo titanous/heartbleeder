@@ -1,6 +1,6 @@
 # Heartbleeder
 
-Test your servers for OpenSSL
+Tests your servers for OpenSSL
 [CVE-2014-0160](https://www.openssl.org/news/secadv_20140407.txt) aka
 [Heartbleed](http://heartbleed.com/).
 
