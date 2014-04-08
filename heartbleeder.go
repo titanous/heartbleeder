@@ -16,7 +16,7 @@ func main() {
 		os.Exit(2)
 	}
 	host := os.Args[1]
-	if !strings.Contains(":", host) {
+	if !strings.Contains(host, ":") {
 		host += ":443"
 	}
 	c, err := tls.Dial("tcp", host, &tls.Config{InsecureSkipVerify: true})
