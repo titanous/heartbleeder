@@ -46,10 +46,13 @@ type Conn struct {
 	clientProtocol         string
 	clientProtocolFallback bool
 
+	serverAcceptsHeartbeats bool
+
 	// input/output
 	in, out  halfConn     // in.Mutex < out.Mutex
 	rawInput *block       // raw input, right off the wire
 	input    *block       // application data waiting to be read
+	hb       []byte       // heartbeat data waiting to be read
 	hand     bytes.Buffer // handshake data waiting to be read
 
 	tmp [16]byte
@@ -524,6 +527,11 @@ func (c *Conn) readRecord(want recordType) error {
 			c.sendAlert(alertInternalError)
 			return c.in.setErrorLocked(errors.New("tls: application data record requested before handshake complete"))
 		}
+	case recordTypeHeartbeat:
+		if !c.handshakeComplete {
+			c.sendAlert(alertInternalError)
+			return c.in.setErrorLocked(errors.New("tls: heartbeat record requested before handshake complete"))
+		}
 	}
 
 Again:
@@ -652,6 +660,14 @@ Again:
 			return c.in.setErrorLocked(c.sendAlert(alertNoRenegotiation))
 		}
 		c.hand.Write(data)
+
+	case recordTypeHeartbeat:
+		if typ != want {
+			c.in.setErrorLocked(c.sendAlert(alertUnexpectedMessage))
+			break
+		}
+		c.hb = data
+		b = nil
 	}
 
 	if b != nil {
@@ -876,6 +892,54 @@ func (c *Conn) Write(b []byte) (int, error) {
 
 	n, err := c.writeRecord(recordTypeApplicationData, b)
 	return n + m, c.out.setErrorLocked(err)
+}
+
+var ErrNoHeartbeat = errors.New("tls: server does not accept heartbeats")
+
+func (c *Conn) Heartbeat(length uint16, payload []byte) (int, []byte, error) {
+	if err := c.Handshake(); err != nil {
+		return 0, nil, err
+	}
+
+	if !c.serverAcceptsHeartbeats {
+		return 0, nil, ErrNoHeartbeat
+	}
+
+	c.out.Lock()
+	data := make([]byte, 3+len(payload)+16)
+	data[0] = 1 // heartbeat_request
+	data[1] = byte(length << 8)
+	data[2] = byte(length)
+	copy(data[3:], payload)
+	_, err := c.writeRecord(recordTypeHeartbeat, data)
+	c.out.Unlock()
+	if err != nil {
+		return 0, nil, err
+	}
+
+	c.in.Lock()
+	defer c.in.Unlock()
+	for c.hb == nil && c.in.err == nil {
+		if err := c.readRecord(recordTypeHeartbeat); err != nil {
+			// Soft error, like EAGAIN
+			return 0, nil, err
+		}
+	}
+	if err := c.in.err; err != nil {
+		return 0, nil, err
+	}
+
+	if len(c.hb) < 3 {
+		return 0, nil, fmt.Errorf("tls: heartbeat got %d bytes, expected >=3", len(c.hb))
+	}
+	if c.hb[0] != 2 {
+		return 0, nil, fmt.Errorf("tls: heartbeat expected type heartbeat_response (2), got %d", c.hb[0])
+	}
+
+	hbLen := int(c.hb[1]<<8) | int(c.hb[2])
+	res := make([]byte, len(c.hb)-3)
+	copy(res, c.hb[3:])
+	return hbLen, res, nil
 }
 
 // Read can be made to time out and return a net.Error with Timeout() == true

@@ -47,6 +47,7 @@ func (c *Conn) clientHandshake() error {
 		supportedPoints:     []uint8{pointFormatUncompressed},
 		nextProtoNeg:        len(c.config.NextProtos) > 0,
 		secureRenegotiation: true,
+		heartbeatSender:     true,
 	}
 
 	possibleCipherSuites := c.config.cipherSuites()
@@ -205,6 +206,7 @@ NextCipherSuite:
 	c.didResume = isResume
 	c.handshakeComplete = true
 	c.cipherSuite = suite.id
+	c.serverAcceptsHeartbeats = hs.serverHello.heartbeatReceiver
 	return nil
 }
 
