@@ -901,7 +901,8 @@ func (c *Conn) WriteHeartbeat(length uint16, payload []byte) error {
 	if err := c.Handshake(); err != nil {
 		return err
 	}
-	if !c.serverAcceptsHeartbeats {
+
+	if c.isClient && !c.serverAcceptsHeartbeats {
 		return ErrNoHeartbeat
 	}
 
