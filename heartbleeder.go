@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -16,44 +17,81 @@ import (
 
 var defaultTLSConfig = tls.Config{InsecureSkipVerify: true}
 
+const (
+	ResultSecure = iota
+	ResultUnknown
+	ResultConnectionRefused
+	ResultVunerable
+	ResultError
+)
+
+type Dialer func(string) (*tls.Conn, error)
+
 func main() {
+	pg := flag.Bool("pg", false, "run a check specific to Postgres TLS, single host only.")
 	timeout := flag.Duration("timeout", 5*time.Second, "Timeout after sending heartbeat")
-	pg := flag.Bool("pg", false, "run a check specific to Postgres TLS")
+	hostFile := flag.String("hostfile", "", "Path to a newline seperated file with hosts or ips")
+	workers := flag.Int("workers", runtime.NumCPU()*10, "Number of workers to scan hosts with, only used with hostfile flag")
+	retryDelay := flag.Duration("retry", 10*time.Second, "Seconds to wait before retesting a host after an unfavorable response")
+	refreshDelay := flag.Duration("refresh", 10*time.Minute, "Seconds to wait before rechecking secure hosts")
+	listen := flag.String("listen", "localhost:5000", "Host:port to serve heartbleed page")
 	flag.Usage = func() {
-		fmt.Printf("Usage: %s [options] host[:443]\n", os.Args[0])
-		fmt.Println("Options:")
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] host[:443]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
-	host := flag.Arg(0)
 
+	if *hostFile != "" {
+		checkMultiHosts(*hostFile, *timeout, *retryDelay, *refreshDelay, *workers, *listen)
+	} else {
+		checkSingleHost(flag.Arg(0), *timeout, *pg)
+	}
+}
+
+func checkSingleHost(host string, timeout time.Duration, pg bool) {
 	if !strings.Contains(host, ":") {
-		if *pg {
+		if pg {
 			host += ":5432"
 		} else {
 			host += ":443"
 		}
 	}
-	var c *tls.Conn
+
+	var d Dialer
+	if pg {
+		d = pgStartTLS
+	}
+
+	ret, _ := checkHeartbeat(host, timeout, d)
+	os.Exit(ret)
+}
+
+func checkHeartbeat(host string, timeout time.Duration, dial Dialer) (int, error) {
 	var err error
-	if *pg {
-		c, err = pgStartTLS(host)
+	var c *tls.Conn
+
+	if dial != nil {
+		c, err = dial(host)
 	} else {
 		c, err = tls.Dial("tcp", host, &defaultTLSConfig)
 	}
+
 	if err != nil {
 		log.Printf("Error connecting to %s: %s\n", host, err)
-		os.Exit(2)
+		return ResultConnectionRefused, err
 	}
+	defer c.Close()
 
 	err = c.WriteHeartbeat(1, nil)
 	if err == tls.ErrNoHeartbeat {
-		fmt.Printf("SECURE - %s does not have the heartbeat extension enabled\n", host)
-		os.Exit(0)
+		log.Printf("SECURE(%s) - does not have the heartbeat extension enabled", host)
+		return ResultSecure, err
 	}
+
 	if err != nil {
-		fmt.Println("UNKNOWN - Heartbeat enabled, but there was an error writing the payload:", err)
-		os.Exit(2)
+		log.Printf("UNKNOWN(%s) - Heartbeat enabled, but there was an error writing the payload:", host, err)
+		return ResultError, err
 	}
 
 	readErr := make(chan error)
@@ -65,14 +103,16 @@ func main() {
 	select {
 	case err := <-readErr:
 		if err == nil {
-			fmt.Printf("VULNERABLE - %s has the heartbeat extension enabled and is vulnerable to CVE-2014-0160\n", host)
-			os.Exit(1)
+			log.Printf("VULNERABLE(%s) - has the heartbeat extension enabled and is vulnerable to CVE-2014-0160", host)
+			return ResultVunerable, err
 		}
-		fmt.Printf("SECURE - %s has heartbeat extension enabled but is not vulnerable\n", host)
-		fmt.Printf("This error happened while reading the response to the malformed heartbeat (almost certainly a good thing): %q\n", err)
-	case <-time.After(*timeout):
-		fmt.Printf("SECURE - %s has the heartbeat extension enabled, but timed out after a malformed heartbeat (this likely means that it is not vulnerable)\n", host)
+		log.Printf("SECURE(%s) has heartbeat extension enabled but is not vulnerable: %q", host, err)
+		return ResultSecure, err
+	case <-time.After(timeout):
 	}
+
+	log.Printf("SECURE(%s) - has the heartbeat extension enabled, but timed out after a malformed heartbeat (this likely means that it is not vulnerable)", host)
+	return ResultSecure, err
 }
 
 func pgStartTLS(addr string) (*tls.Conn, error) {
