@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/binary"
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -11,8 +14,11 @@ import (
 	"github.com/titanous/heartbleeder/tls"
 )
 
+var defaultTLSConfig = tls.Config{InsecureSkipVerify: true}
+
 func main() {
 	timeout := flag.Duration("timeout", 5*time.Second, "Timeout after sending heartbeat")
+	pg := flag.Bool("pg", false, "run a check specific to Postgres TLS")
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [options] host[:443]\n", os.Args[0])
 		fmt.Println("Options:")
@@ -20,10 +26,21 @@ func main() {
 	}
 	flag.Parse()
 	host := flag.Arg(0)
+
 	if !strings.Contains(host, ":") {
-		host += ":443"
+		if *pg {
+			host += ":5432"
+		} else {
+			host += ":443"
+		}
 	}
-	c, err := tls.Dial("tcp", host, &tls.Config{InsecureSkipVerify: true})
+	var c *tls.Conn
+	var err error
+	if *pg {
+		c, err = pgStartTLS(host)
+	} else {
+		c, err = tls.Dial("tcp", host, &defaultTLSConfig)
+	}
 	if err != nil {
 		log.Printf("Error connecting to %s: %s\n", host, err)
 		os.Exit(2)
@@ -56,4 +73,36 @@ func main() {
 	case <-time.After(*timeout):
 		fmt.Printf("SECURE - %s has the heartbeat extension enabled, but timed out after a malformed heartbeat (this likely means that it is not vulnerable)\n", host)
 	}
+}
+
+func pgStartTLS(addr string) (*tls.Conn, error) {
+	c, err := net.Dial("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	// send an SSLRequest message as per Postgres protocol documentation:
+	// http://www.postgresql.org/docs/9.3/static/protocol-flow.html#AEN99228
+	message := make([]byte, 8)
+	binary.BigEndian.PutUint32(message[:4], 8)
+	binary.BigEndian.PutUint32(message[4:], 80877103)
+	_, err = c.Write(message)
+	if err != nil {
+		return nil, fmt.Errorf("could not write to server: %v", err)
+	}
+
+	// read the response
+	response := make([]byte, 1)
+	_, err = io.ReadFull(c, response)
+	if err != nil {
+		return nil, fmt.Errorf("could not read server response: %v", err)
+	}
+
+	// if the response is not 'S', no ssl
+	if response[0] != 'S' {
+		return nil, fmt.Errorf("this server does not support SSL")
+	}
+
+	// otherwise, we have a connection to try to heartbeat
+	return tls.Client(c, &defaultTLSConfig), nil
 }

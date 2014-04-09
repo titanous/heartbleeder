@@ -14,6 +14,14 @@ $ heartbleeder example.com
 INSECURE - example.com:443 has the heartbeat extension enabled and is vulnerable
 ```
 
+Postgres uses OpenSSL in a slightly different way. To test whether a Postgres
+server is vulnerable, run the following (defaults to port 5432):
+
+```text
+$ heartbleeder -pg example.com
+SECURE - example:5432 does not have the heartbeat extension enabled
+```
+
 Binaries are available from
 [gobuild.io](https://gobuild.io/download/github.com/titanous/heartbleeder).
 
