@@ -148,26 +148,32 @@ func readHosts(hostFile string) []*Target {
 
 func handleHTTP(hosts []*Target, listenAddr string) {
 	tmpl, _ := template.New("foo").Parse(`
-	{{define "header"}}
-	<html><head><link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css"/>
-	</head>
-	<body>{{end}}
-	{{define "summary"}}
-	<p>Total {{.Header}} hosts: <strong>{{.Count}}</strong></p>
-	{{end}}
-	{{define "targetrowbegin"}}
-	<table class="table table-hover table-bordered">
-	<tr><th>Target</th><th>IP</th><th>Checked</th>
-	{{end}}
-	{{define "targetrow"}}
-	<tr class="{{.Style}}">
-	<td>{{.Target.OriginalHost}}</td><td>{{.Target.Host}}</td><td>{{.Target.LastChecked}}</td></tr>
-	{{end}}
-	{{define "targetrowend"}}
-	</table>
-	{{end}}
-	{{define "footer"}}
-	</body></html>{{end}}`)
+{{define "header"}}
+<html>
+<head>
+<title>Heartbleeder Dashboard</title>
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css"/>
+</head>
+<body>
+{{end}}
+{{define "summary"}}
+<p>Total {{.Header}} hosts: <strong>{{.Count}}</strong></p>
+{{end}}
+{{define "targetrowbegin"}}
+<table class="table table-hover table-bordered">
+<tr><th>Target</th><th>IP</th><th>Checked</th>
+{{end}}
+{{define "targetrow"}}
+<tr class="{{.Style}}">
+<td>{{.Target.OriginalHost}}</td><td>{{.Target.Host}}</td><td>{{.Target.LastChecked}}</td></tr>
+{{end}}
+{{define "targetrowend"}}
+</table>
+{{end}}
+{{define "footer"}}
+</body>
+</html>
+{{end}}`)
 
 	type TargetRowContext struct {
 		Target
