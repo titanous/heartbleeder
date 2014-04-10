@@ -48,7 +48,7 @@ func checkMultiHosts(hostFile string, timeout, retryDelay, refreshDelay time.Dur
 		go scanner(dispatch, timeout, retryDelay)
 	}
 
-	log.Println("Serving Heartbleed status on", listenAddr)
+	log.Print("Serving Heartbleed dashboard at http://", listenAddr)
 
 	go feed(hosts, dispatch, retryDelay, false)
 	go feed(hosts, dispatch, refreshDelay, true)
