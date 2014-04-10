@@ -50,6 +50,7 @@ func main() {
 }
 
 func checkSingleHost(host string, timeout time.Duration, pg bool) {
+	log.SetFlags(0)
 	if !strings.Contains(host, ":") {
 		if pg {
 			host += ":5432"
