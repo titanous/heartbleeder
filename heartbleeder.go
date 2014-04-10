@@ -28,7 +28,7 @@ const (
 type Dialer func(string) (*tls.Conn, error)
 
 func main() {
-	pg := flag.Bool("pg", false, "run a check specific to Postgres TLS, single host only.")
+	pg := flag.Bool("pg", false, "Check PostgreSQL TLS, incompatible with -hostfile")
 	timeout := flag.Duration("timeout", 5*time.Second, "Timeout after sending heartbeat")
 	hostFile := flag.String("hostfile", "", "Path to a newline seperated file with hosts or ips")
 	workers := flag.Int("workers", runtime.NumCPU()*10, "Number of workers to scan hosts with, only used with hostfile flag")
@@ -45,6 +45,10 @@ func main() {
 	if *hostFile != "" {
 		checkMultiHosts(*hostFile, *timeout, *retryDelay, *refreshDelay, *workers, *listen)
 	} else {
+		if flag.NArg() != 1 {
+			flag.Usage()
+			os.Exit(2)
+		}
 		checkSingleHost(flag.Arg(0), *timeout, *pg)
 	}
 }
