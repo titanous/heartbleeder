@@ -34,7 +34,7 @@ func main() {
 	workers := flag.Int("workers", runtime.NumCPU()*10, "Number of workers to scan hosts with, only used with hostfile flag")
 	retryDelay := flag.Duration("retry", 10*time.Second, "Seconds to wait before retesting a host after an unfavorable response")
 	refreshDelay := flag.Duration("refresh", 10*time.Minute, "Seconds to wait before rechecking secure hosts")
-	listen := flag.String("listen", "localhost:5000", "Host:port to serve heartbleed page")
+	listen := flag.String("listen", "localhost:5000", "Address to serve HTTP dashboard from")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] host[:443]\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Options:\n")
