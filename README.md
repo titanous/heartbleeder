@@ -37,7 +37,7 @@ SECURE - example:5432 does not have the heartbeat extension enabled
 Binaries are available from
 [gobuild.io](https://gobuild.io/download/github.com/titanous/heartbleeder).
 
-Build from source by running `go get github.com/titanous/heartbleeder`, which
+Build from source by running `go get -u github.com/titanous/heartbleeder`, which
 will put the code in `$GOPATH/src/github.com/titanous/heartbleeder` and a binary
 at `$GOPATH/bin/heartbleeder`.
 
