@@ -30,7 +30,7 @@ type Dialer func(string) (*tls.Conn, error)
 func main() {
 	pg := flag.Bool("pg", false, "Check PostgreSQL TLS, incompatible with -hostfile")
 	timeout := flag.Duration("timeout", 5*time.Second, "Timeout after sending heartbeat")
-	hostFile := flag.String("hostfile", "", "Path to a newline seperated file with hosts or ips")
+	hostFile := flag.String("hostfile", "", "Path to a newline separated file with hosts or ips")
 	workers := flag.Int("workers", runtime.NumCPU()*10, "Number of workers to scan hosts with, only used with hostfile flag")
 	retryDelay := flag.Duration("retry", 10*time.Second, "Seconds to wait before retesting a host after an unfavorable response")
 	refreshDelay := flag.Duration("refresh", 10*time.Minute, "Seconds to wait before rechecking secure hosts")
