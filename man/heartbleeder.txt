@@ -1,0 +1,24 @@
+NAME
+  heartbleeder - Test servers for OpenSSL CVE-2014-0160, aka Heartbleed
+SYNOPSIS
+  heartbleeder [options] host[:443]
+DESCRIPTION
+  heartbleeder is a tool that tests remotely (over a network) if a system is compromised by an insecure OpenSSL service, in accordance with CVE-2014-0160, aka Heartbleed.
+
+  More about Heartbleed Bug can be viewed at http://heartbleed.com.
+OPTIONS
+  -hostfile=""  Path to a newline separated file with hosts or IPs.
+  -listen="localhost:5000"  Address to serve HTTP dashboard from.
+  -pg=false  Check PostgreSQL TLS. This option is incompatible with -hostfile.
+  -refresh=10m0s  Seconds to wait before rechecking secure hosts.
+  -retry=10s  Seconds to wait before retesting a host after an unfavorable response.
+  -timeout=5s  Timeout after sending heartbeat.
+  -workers=40  Number of workers to scan hosts with, only used with hostfile flag.
+EXAMPLES
+  *Multiple hosts:  Multiple hosts may be monitored by setting -hostfile flag to a file with newline separated addresses.
+  *Testing PostgreSQL:  Postgres uses OpenSSL in a slightly different way. To test whether a Postgres server is vulnerable, run the following (defaults to port 5432). Example: $ heartbleeder -pg example.com
+WARNING
+  No guarantees are made about the accuracy of results, and you should verify them independently by checking your OpenSSL build.
+AUTHOR
+  heartbleeder was written by Jonathan Rudenberg <jonathan@titanous.com>. The TLS implementation was borrowed from the Go standard library.
+  This manual page was written by Joao Eriberto Mota Filho <eriberto@eriberto.pro.br> for the Debian project (but may be used by others). The heartbleeder help page was the source.
