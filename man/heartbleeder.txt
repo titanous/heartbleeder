@@ -14,9 +14,12 @@ OPTIONS
   -retry=10s  Seconds to wait before retesting a host after an unfavorable response.
   -timeout=5s  Timeout after sending heartbeat.
   -workers=40  Number of workers to scan hosts with, only used with hostfile flag.
-EXAMPLES
-  *Multiple hosts:  Multiple hosts may be monitored by setting -hostfile flag to a file with newline separated addresses.
-  *Testing PostgreSQL:  Postgres uses OpenSSL in a slightly different way. To test whether a Postgres server is vulnerable, run the following (defaults to port 5432). Example: $ heartbleeder -pg example.com
+NOTES
+  Multiple hosts may be monitored by setting '-hostfile' flag to a file with newline separated addresses. A web dashboard will be available at 'http://localhost:5000' by default.
+
+  Postgres uses OpenSSL in a slightly different way. To test whether a Postgres server is vulnerable, run the following (defaults to port 5432). Example:
+
+  $ heartbleeder -pg example.com.br
 WARNING
   No guarantees are made about the accuracy of results, and you should verify them independently by checking your OpenSSL build.
 AUTHOR
